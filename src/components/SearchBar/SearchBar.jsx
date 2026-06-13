@@ -1,0 +1,159 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, X } from 'lucide-react';
+import figuresData from '../../data/figures.json';
+import './SearchBar.css';
+
+export default function SearchBar() {
+  const [query, setQuery] = useState('');
+  const [allFigures, setAllFigures] = useState(figuresData); // fallback mặc định
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('tat-ca');
+  const dropdownRef = useRef(null);
+
+  const categories = [
+    { id: 'tat-ca', label: 'Tất cả' },
+    { id: 'lanh-tu', label: 'Lãnh tụ' },
+    { id: 'anh-hung', label: 'Anh hùng dân tộc' },
+    { id: 'nha-van', label: 'Nhà văn & Nhà thơ' },
+    { id: 'khoa-hoc', label: 'Nhà khoa học' },
+  ];
+
+  // Fetch danh sách danh nhân từ API khi mount
+  useEffect(() => {
+    const fetchFigures = async () => {
+      try {
+        const res = await fetch('/api/celebrities');
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) setAllFigures(data);
+      } catch {
+        // Giữ nguyên fallback figuresData
+      }
+    };
+    fetchFigures();
+  }, []);
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Lọc gợi ý theo query và category
+  useEffect(() => {
+    if (query.trim() === '') {
+      setSuggestions([]);
+      return;
+    }
+
+    const q = query.toLowerCase();
+    const filtered = allFigures.filter(fig => {
+      const name = (fig.name || '').toLowerCase();
+      const altName = (fig.alternative_name || fig.realName || '').toLowerCase();
+      const summary = (fig.summary || fig.shortDescription || '').toLowerCase();
+      const tags = fig.tags || [];
+
+      const matchesSearch =
+        name.includes(q) ||
+        altName.includes(q) ||
+        summary.includes(q) ||
+        tags.some(tag => tag.toLowerCase().includes(q));
+
+      const matchesCategory =
+        activeCategory === 'tat-ca' ||
+        fig.category === activeCategory ||
+        (fig.fields || []).some(f => f.name?.toLowerCase().includes(activeCategory));
+
+      return matchesSearch && matchesCategory;
+    });
+
+    setSuggestions(filtered.slice(0, 5));
+  }, [query, activeCategory, allFigures]);
+
+  const handleClear = () => {
+    setQuery('');
+    setSuggestions([]);
+  };
+
+  // Hỗ trợ cả cấu trúc DB lẫn file tĩnh
+  const getThumb = (fig) =>
+    fig.thumbnail || fig.avatar_image || fig.image ||
+    'https://images.unsplash.com/photo-1578925547913-d86a9e16d814?q=80&w=150&auto=format&fit=crop';
+
+  const getCategoryLabel = (fig) =>
+    fig.categoryLabel || (fig.fields?.[0]?.name) || 'Danh nhân';
+
+  return (
+    <section className="search-section" id="search-section">
+      <div className="search-section__inner">
+        <div className="search-bar__container" ref={dropdownRef}>
+          <div className={`search-bar__input-wrapper ${showSuggestions && suggestions.length > 0 ? 'has-dropdown' : ''}`}>
+            <Search className="search-icon" size={20} />
+            <input
+              type="text"
+              placeholder="Tìm kiếm danh nhân, thời kỳ, từ khóa (ví dụ: cách mạng, truyện kiều)..."
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true); }}
+              onFocus={() => setShowSuggestions(true)}
+              className="search-input"
+            />
+            {query && (
+              <button onClick={handleClear} className="clear-btn" aria-label="Xóa tìm kiếm">
+                <X size={18} />
+              </button>
+            )}
+          </div>
+
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="suggestions-dropdown">
+              <div className="suggestions-header">
+                <span>Kết quả gợi ý ({suggestions.length})</span>
+              </div>
+              <ul className="suggestions-list">
+                {suggestions.map(fig => (
+                  <li key={fig.id} className="suggestion-item">
+                    <a href={`/danh-nhan/${fig.id}`} className="suggestion-link">
+                      <img src={getThumb(fig)} alt={fig.name} className="suggestion-thumb" />
+                      <div className="suggestion-info">
+                        <span className="suggestion-name">{fig.name}</span>
+                        <span className="suggestion-desc">{fig.shortDescription || fig.summary || ''}</span>
+                      </div>
+                      <span className="suggestion-category">{getCategoryLabel(fig)}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {showSuggestions && query.trim() !== '' && suggestions.length === 0 && (
+            <div className="suggestions-dropdown empty">
+              <p>Không tìm thấy danh nhân phù hợp với từ khóa của bạn.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="search-chips">
+          <span className="chips-label">Lọc nhanh:</span>
+          <div className="chips-list">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`chip ${activeCategory === cat.id ? 'chip--active' : ''}`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

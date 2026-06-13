@@ -1,0 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700&display=swap');
+
+/* ===== CSS RESET & DESIGN TOKENS (LIGHT MODE DEFAULT) ===== */
+:root {
+  /* === Primary Palette (từ #5f31ec) === */
+  --color-primary-50:  #f0ebff;   /* Lightest – backgrounds */
+  --color-primary-100: #dcd1ff;   /* Light – hover states */
+  --color-primary-200: #b9a3ff;   /* Light accent */
+  --color-primary-300: #5f31ec;   /* ★ Main brand color */
+  --color-primary-400: #4b24cc;   /* Slightly darker */
+  --color-primary-500: #3917a8;   /* Darker for text */
+  --color-primary-600: #2a0e85;   /* Dark – active states */
+  --color-primary-700: #1d0761;   /* Darker */
+  --color-primary-800: #120240;   /* Very dark */
+  --color-primary-900: #0b0024;   /* Deepest – near black */
+
+  /* === Neutral / Surface === */
+  --color-bg: #ffffff;            /* Main background - pure white */
+  --color-bg-light: #faf6ff;      /* Very light purple/lilac tint for alternating sections */
+  --color-bg-warm: #f3ebff;       /* Light warm lilac tint */
+  --color-bg-elevated: #fcf7ff;   /* Elevated cards - clean off-white purple */
+  --color-bg-footer: #120240;     /* Footer background - very dark indigo */
+
+  /* === Text === */
+  --color-text-primary: #0f052d;  /* Very dark indigo for maximum legibility */
+  --color-text-secondary: #2a1b54;
+  --color-text-muted: #6f5d9c;
+  --color-text-inverse: #ffffff;  /* Text on dark surfaces */
+
+  /* === Border & Divider === */
+  --color-border: #dfbeff;        /* Soft purple border */
+  --color-border-light: #eedcff;
+  --color-divider: #dfbeff;
+
+  /* === Shadows === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.18);
+  --shadow-glow: 0 0 20px rgba(95, 49, 236, 0.35);
+
+  /* === Accent / Semantic === */
+  --color-accent: #4a7fff;        /* Azure blue accent */
+  --color-accent-hover: #2662ff;
+  --color-accent-glow: rgba(74, 127, 255, 0.35);
+  --color-accent-soft: rgba(74, 127, 255, 0.12);
+  --color-gold: #f0c040;          /* Cho star ratings, highlights */
+
+  /* === Overlay === */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-overlay-light: rgba(0, 0, 0, 0.04);
+
+  /* === Header (glassmorphism) === */
+  --header-bg: rgba(255, 255, 255, 0.85);
+  --header-bg-scrolled: rgba(255, 255, 255, 0.95);
+
+  /* Common absolute colors */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Typography */
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: 'Playfair Display', 'Georgia', serif;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --space-4xl: 6rem;
+
+  /* Layout */
+  --max-width: 1200px;
+  --header-height: 72px;
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-base: 0.3s ease;
+  --transition-slow: 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+}
+
+/* ===== DARK MODE OVERRIDES ===== */
+[data-theme="dark"] {
+  /* === Neutral / Surface === */
+  --color-bg: #ffffff;            /* Main background - pure white */
+  --color-bg-light: #faf6ff;      /* Lighter purple */
+  --color-bg-warm: #f3ebff;       /* Warm purple */
+  --color-bg-elevated: #fcf7ff;   /* Cards */
+  --color-bg-footer: #120240;     /* Dark footer */
+
+  /* === Text === */
+  --color-text-primary: #0f052d;  /* Dark text - keep readable */
+  --color-text-secondary: #2a1b54;
+  --color-text-muted: #6f5d9c;
+  --color-text-inverse: #ffffff;
+
+  /* === Border & Divider === */
+  --color-border: #dfbeff;        /* Soft purple border */
+  --color-border-light: #eedcff;
+  --color-divider: #dfbeff;
+
+  /* === Shadows (tối hơn, glow hơn) === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 25px rgba(95, 49, 236, 0.35);
+
+  /* === Accent === */
+  --color-accent: #4a7fff;        /* Azure blue */
+  --color-accent-hover: #2662ff;
+  --color-accent-glow: rgba(74, 127, 255, 0.35);
+  --color-accent-soft: rgba(74, 127, 255, 0.12);
+
+  /* === Overlay === */
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-overlay-light: rgba(255, 255, 255, 0.03);
+
+  /* === Header (glassmorphism dark) === */
+  --header-bg: rgba(255, 255, 255, 0.85);
+  --header-bg-scrolled: rgba(255, 255, 255, 0.95);
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* Smooth theme transitions */
+  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color var(--transition-fast);
+}
+
+ul, ol {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Auto dim images slightly in dark mode for better visual comfort */
+[data-theme="dark"] img:not(.no-dim) {
+  filter: brightness(0.85);
+  transition: filter var(--transition-base);
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+input {
+  border: none;
+  outline: none;
+  font-family: inherit;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-light);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-bg-light);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}

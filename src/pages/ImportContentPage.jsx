@@ -62,6 +62,12 @@ export default function ImportContentPage() {
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Admin Management States
+  const [editingId, setEditingId] = useState(null);
+  const [adminFigures, setAdminFigures] = useState([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminSearch, setAdminSearch] = useState('');
+
   // Achievements handlers
   const handleAddAchievement = () => setAchievements([...achievements, '']);
   const handleRemoveAchievement = (index) => {
@@ -104,6 +110,149 @@ export default function ImportContentPage() {
     updated[index] = { ...updated[index], [field]: value };
     setRelated(updated);
   };
+
+  // Helper to map fields from DB to category id
+  const mapFieldsToCategory = (fields) => {
+    if (!fields || fields.length === 0) return 'anh-hung';
+    const firstFieldName = fields[0].name.toLowerCase();
+    if (firstFieldName.includes('quân sự') || firstFieldName.includes('anh hùng')) return 'anh-hung';
+    if (firstFieldName.includes('chính trị') || firstFieldName.includes('lãnh tụ')) return 'lanh-tu';
+    if (firstFieldName.includes('khoa học') || firstFieldName.includes('giáo dục')) return 'khoa-hoc';
+    if (firstFieldName.includes('văn học') || firstFieldName.includes('nghệ thuật')) return 'nha-van';
+    if (firstFieldName.includes('công nghệ') || firstFieldName.includes('kỹ thuật')) return 'cong-nghe';
+    if (firstFieldName.includes('kinh doanh') || firstFieldName.includes('doanh nhân')) return 'kinh-doanh';
+    return 'anh-hung';
+  };
+
+  const fetchAdminFigures = async () => {
+    try {
+      setAdminLoading(true);
+      const res = await fetch(`${API_CELEBRITIES_URL}?t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAdminFigures(data);
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách quản lý:', err);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'manager') {
+      fetchAdminFigures();
+    }
+  }, [activeTab]);
+
+  // Edit Click Handler
+  const handleEditClick = async (id) => {
+    try {
+      setIsLoading(true);
+      setErrorMsg('');
+      const res = await fetch(`${API_CELEBRITIES_URL}/${id}?t=${Date.now()}`);
+      if (!res.ok) throw new Error('Không thể tải thông tin chi tiết vĩ nhân');
+      
+      const figure = await res.json();
+      
+      // Populate form
+      setName(figure.name || '');
+      setRealName(figure.alternative_name || '');
+      setBirthYear(figure.birth_date || '');
+      setDeathYear(figure.death_date || '');
+      setShortDescription(figure.summary || '');
+      setImage(figure.avatar_image || '');
+      
+      // Era mapping
+      if (figure.period_name) {
+        setEra(figure.period_name);
+      }
+      
+      // Category mapping
+      const catId = mapFieldsToCategory(figure.fields);
+      setCategory(catId);
+      
+      setEditingId(id);
+      setActiveTab('basic'); // Switch to basic tab to show the editing form
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'Lỗi khi tải thông tin sửa');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Delete Click Handler
+  const handleDeleteClick = async (id) => {
+    const fig = adminFigures.find(f => f.id === id);
+    const displayName = fig ? fig.name : 'nhân vật này';
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${displayName}? Hành động này sẽ xóa toàn bộ các câu chuyện và bình luận liên quan!`)) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMsg('');
+      setSuccess(false);
+      const importKey = sessionStorage.getItem('dnbd_import_key');
+      const res = await fetch(`${API_CELEBRITIES_URL}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-import-key': importKey || ''
+        }
+      });
+
+      if (res.status === 401) {
+        sessionStorage.removeItem('dnbd_import_key');
+        setIsAuthorized(false);
+        setPassError('Mật khẩu không đúng. Vui lòng thử lại!');
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Lỗi khi xóa vĩ nhân');
+      }
+
+      // Reload list
+      await fetchAdminFigures();
+      alert('Đã xóa vĩ nhân thành công!');
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'Lỗi kết nối khi xóa vĩ nhân');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Cancel edit handler
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setName('');
+    setRealName('');
+    setBirthYear('');
+    setDeathYear('');
+    setShortDescription('');
+    setFullBio('');
+    setImage('');
+    setTagsInput('');
+    setAchievements(['']);
+    setFacts(['']);
+    setGalleryImages(['', '']);
+    setRelated([{ title: '', content: '', image: '' }]);
+  };
+
+  const filteredAdminFigures = React.useMemo(() => {
+    if (!adminSearch.trim()) return adminFigures;
+    const q = adminSearch.toLowerCase();
+    return adminFigures.filter(fig => {
+      const nameVal = (fig.name || '').toLowerCase();
+      const altNameVal = (fig.alternative_name || '').toLowerCase();
+      return nameVal.includes(q) || altNameVal.includes(q);
+    });
+  }, [adminFigures, adminSearch]);
 
   // Submit Handler
   const handleSubmit = async (e) => {
@@ -151,8 +300,11 @@ export default function ImportContentPage() {
 
     try {
       const importKey = sessionStorage.getItem('dnbd_import_key');
-      const response = await fetch(API_CELEBRITIES_URL, {
-        method: 'POST',
+      const url = editingId ? `${API_CELEBRITIES_URL}/${editingId}` : API_CELEBRITIES_URL;
+      const method = editingId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'x-import-key': importKey || ''
@@ -187,6 +339,7 @@ export default function ImportContentPage() {
       setFacts(['']);
       setGalleryImages(['', '']);
       setRelated([{ title: '', content: '', image: '' }]);
+      setEditingId(null);
 
       // Auto redirect
       setTimeout(() => {
@@ -306,6 +459,14 @@ export default function ImportContentPage() {
                     <FileText size={15} />
                     Nội dung trang chi tiết
                   </button>
+                  <button 
+                    type="button"
+                    onClick={() => setActiveTab('manager')}
+                    className={`import-tab-btn ${activeTab === 'manager' ? 'import-tab-btn--active' : ''}`}
+                  >
+                    <List size={15} />
+                    Quản lý danh sách
+                  </button>
                 </div>
 
                 {success && (
@@ -326,300 +487,372 @@ export default function ImportContentPage() {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="import-form">
-                  
-                  {/* TAB 1: BASIC INFORMATION */}
-                  {activeTab === 'basic' && (
-                    <div className="tab-pane animate-fadeIn">
-                      
-                      {/* Name field */}
-                      <div className="form-group">
-                        <label htmlFor="fig-name">Tên vĩ nhân <span className="required">*</span></label>
-                        <input
-                          type="text"
-                          id="fig-name"
-                          placeholder="Ví dụ: Trần Hưng Đạo"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          required
-                        />
-                      </div>
-
-                      {/* Real Name */}
-                      <div className="form-group">
-                        <label htmlFor="fig-real-name">Tên thật / Tên khác</label>
-                        <input
-                          type="text"
-                          id="fig-real-name"
-                          placeholder="Ví dụ: Trần Quốc Tuấn"
-                          value={realName}
-                          onChange={(e) => setRealName(e.target.value)}
-                        />
-                      </div>
-
-                      {/* Lifespan years */}
-                      <div className="form-row">
-                        <div className="form-group col-6">
-                          <label htmlFor="fig-birth">Năm sinh</label>
+                {activeTab !== 'manager' ? (
+                  <form onSubmit={handleSubmit} className="import-form">
+                    
+                    {/* TAB 1: BASIC INFORMATION */}
+                    {activeTab === 'basic' && (
+                      <div className="tab-pane animate-fadeIn">
+                        
+                        {/* Name field */}
+                        <div className="form-group">
+                          <label htmlFor="fig-name">Tên vĩ nhân <span className="required">*</span></label>
                           <input
                             type="text"
-                            id="fig-birth"
-                            placeholder="Ví dụ: 1228"
-                            value={birthYear}
-                            onChange={(e) => setBirthYear(e.target.value)}
+                            id="fig-name"
+                            placeholder="Ví dụ: Trần Hưng Đạo"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
                           />
                         </div>
-                        <div className="form-group col-6">
-                          <label htmlFor="fig-death">Năm mất</label>
+
+                        {/* Real Name */}
+                        <div className="form-group">
+                          <label htmlFor="fig-real-name">Tên thật / Tên khác</label>
                           <input
                             type="text"
-                            id="fig-death"
-                            placeholder="Ví dụ: 1300"
-                            value={deathYear}
-                            onChange={(e) => setDeathYear(e.target.value)}
+                            id="fig-real-name"
+                            placeholder="Ví dụ: Trần Quốc Tuấn"
+                            value={realName}
+                            onChange={(e) => setRealName(e.target.value)}
                           />
                         </div>
-                      </div>
 
-                      {/* Category & Era */}
-                      <div className="form-row">
-                        <div className="form-group col-6">
-                          <label htmlFor="fig-cat">Lĩnh vực chính</label>
-                          <select
-                            id="fig-cat"
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                          >
-                            {CATEGORIES.map(c => (
-                              <option key={c.id} value={c.id}>{c.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="form-group col-6">
-                          <label htmlFor="fig-era">Thời kỳ lịch sử</label>
-                          <select
-                            id="fig-era"
-                            value={era}
-                            onChange={(e) => setEra(e.target.value)}
-                          >
-                            {ERAS.map(e => (
-                              <option key={e} value={e}>{e}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Portrait Image URL */}
-                      <div className="form-group">
-                        <label htmlFor="fig-img">Đường dẫn ảnh đại diện (Portrait URL)</label>
-                        <input
-                          type="url"
-                          id="fig-img"
-                          placeholder="https://images.unsplash.com/photo-..."
-                          value={image}
-                          onChange={(e) => setImage(e.target.value)}
-                        />
-                      </div>
-
-                      {/* Short Description */}
-                      <div className="form-group">
-                        <label htmlFor="fig-summary">Mô tả ngắn (Thẻ danh sách)</label>
-                        <textarea
-                          id="fig-summary"
-                          rows="3"
-                          placeholder="Nhập dòng giới thiệu ngắn sẽ hiển thị trên thẻ danh mục..."
-                          value={shortDescription}
-                          onChange={(e) => setShortDescription(e.target.value)}
-                        ></textarea>
-                      </div>
-
-                      {/* Tags */}
-                      <div className="form-group">
-                        <label htmlFor="fig-tags">Tags (Từ khóa liên quan)</label>
-                        <input
-                          type="text"
-                          id="fig-tags"
-                          placeholder="Quân sự, Nhà Trần, Bạch Đằng (Phân tách bằng dấu phẩy)"
-                          value={tagsInput}
-                          onChange={(e) => setTagsInput(e.target.value)}
-                        />
-                      </div>
-
-                      {/* Achievements */}
-                      <div className="form-group" style={{ marginTop: '10px' }}>
-                        <label>Thành tựu chính</label>
-                        {achievements.map((ach, idx) => (
-                          <div key={idx} className="achievement-input-row">
-                            <input
-                              type="text"
-                              placeholder={`Thành tựu ${idx + 1}`}
-                              value={ach}
-                              onChange={(e) => handleAchievementChange(idx, e.target.value)}
-                            />
-                            <button
-                              type="button"
-                              className="remove-ach-btn"
-                              onClick={() => handleRemoveAchievement(idx)}
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          className="add-ach-btn"
-                          onClick={handleAddAchievement}
-                        >
-                          <Plus size={14} />
-                          Thêm thành tựu
-                        </button>
-                      </div>
-
-                    </div>
-                  )}
-
-                  {/* TAB 2: DETAIL PAGE DYNAMIC CONTENT LAYOUT */}
-                  {activeTab === 'detail-content' && (
-                    <div className="tab-pane animate-fadeIn">
-                      
-                      {/* Full Biography */}
-                      <div className="form-group">
-                        <label htmlFor="fig-bio">Tiểu sử đầy đủ</label>
-                        <textarea
-                          id="fig-bio"
-                          rows="5"
-                          placeholder="Nhập nội dung đầy đủ của phần giới thiệu tiểu sử vĩ nhân..."
-                          value={fullBio}
-                          onChange={(e) => setFullBio(e.target.value)}
-                        ></textarea>
-                      </div>
-
-                      {/* Interesting Facts (Sự thật thú vị) */}
-                      <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '15px' }}>
-                        <label>Sự thật thú vị (Trivia Facts)</label>
-                        {facts.map((fact, idx) => (
-                          <div key={idx} className="achievement-input-row">
-                            <textarea
-                              rows="2"
-                              placeholder={`Sự thật thú vị thứ ${idx + 1}...`}
-                              value={fact}
-                              onChange={(e) => handleFactChange(idx, e.target.value)}
-                            ></textarea>
-                            <button
-                              type="button"
-                              className="remove-ach-btn"
-                              onClick={() => handleRemoveFact(idx)}
-                              style={{ height: 'auto' }}
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          className="add-ach-btn"
-                          onClick={handleAddFact}
-                        >
-                          <Plus size={14} />
-                          Thêm sự thật thú vị
-                        </button>
-                      </div>
-
-                      {/* Gallery Images URLs */}
-                      <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '15px' }}>
-                        <label>Hình ảnh phụ (Gallery Images - 2 ảnh chồng lên nhau)</label>
+                        {/* Lifespan years */}
                         <div className="form-row">
                           <div className="form-group col-6">
-                            <label htmlFor="gallery-1" style={{ fontSize: '11px', color: '#aaa' }}>Đường dẫn ảnh phụ 1</label>
+                            <label htmlFor="fig-birth">Năm sinh</label>
                             <input
-                              type="url"
-                              id="gallery-1"
-                              placeholder="https://..."
-                              value={galleryImages[0]}
-                              onChange={(e) => handleGalleryChange(0, e.target.value)}
+                              type="text"
+                              id="fig-birth"
+                              placeholder="Ví dụ: 1228"
+                              value={birthYear}
+                              onChange={(e) => setBirthYear(e.target.value)}
                             />
                           </div>
                           <div className="form-group col-6">
-                            <label htmlFor="gallery-2" style={{ fontSize: '11px', color: '#aaa' }}>Đường dẫn ảnh phụ 2</label>
+                            <label htmlFor="fig-death">Năm mất</label>
                             <input
-                              type="url"
-                              id="gallery-2"
-                              placeholder="https://..."
-                              value={galleryImages[1]}
-                              onChange={(e) => handleGalleryChange(1, e.target.value)}
+                              type="text"
+                              id="fig-death"
+                              placeholder="Ví dụ: 1300"
+                              value={deathYear}
+                              onChange={(e) => setDeathYear(e.target.value)}
                             />
                           </div>
                         </div>
-                      </div>
 
-                      {/* Related articles (Bài viết liên quan / Giai thoại) */}
-                      <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '15px' }}>
-                        <label>Bài viết liên quan / Giai thoại (Related Articles)</label>
-                        {related.map((rel, idx) => (
-                          <div key={idx} className="related-input-group">
-                            <div className="related-input-header">
-                              <span style={{ fontSize: '12px', fontWeight: '700', color: '#d4af37' }}>Bài viết #{idx + 1}</span>
+                        {/* Category & Era */}
+                        <div className="form-row">
+                          <div className="form-group col-6">
+                            <label htmlFor="fig-cat">Lĩnh vực chính</label>
+                            <select
+                              id="fig-cat"
+                              value={category}
+                              onChange={(e) => setCategory(e.target.value)}
+                            >
+                              {CATEGORIES.map(c => (
+                                <option key={c.id} value={c.id}>{c.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-group col-6">
+                            <label htmlFor="fig-era">Thời kỳ lịch sử</label>
+                            <select
+                              id="fig-era"
+                              value={era}
+                              onChange={(e) => setEra(e.target.value)}
+                            >
+                              {ERAS.map(e => (
+                                <option key={e} value={e}>{e}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Portrait Image URL */}
+                        <div className="form-group">
+                          <label htmlFor="fig-img">Đường dẫn ảnh đại diện (Portrait URL)</label>
+                          <input
+                            type="url"
+                            id="fig-img"
+                            placeholder="https://images.unsplash.com/photo-..."
+                            value={image}
+                            onChange={(e) => setImage(e.target.value)}
+                          />
+                        </div>
+
+                        {/* Short Description */}
+                        <div className="form-group">
+                          <label htmlFor="fig-summary">Mô tả ngắn (Thẻ danh sách)</label>
+                          <textarea
+                            id="fig-summary"
+                            rows="3"
+                            placeholder="Nhập dòng giới thiệu ngắn sẽ hiển thị trên thẻ danh mục..."
+                            value={shortDescription}
+                            onChange={(e) => setShortDescription(e.target.value)}
+                          ></textarea>
+                        </div>
+
+                        {/* Tags */}
+                        <div className="form-group">
+                          <label htmlFor="fig-tags">Tags (Từ khóa liên quan)</label>
+                          <input
+                            type="text"
+                            id="fig-tags"
+                            placeholder="Quân sự, Nhà Trần, Bạch Đằng (Phân tách bằng dấu phẩy)"
+                            value={tagsInput}
+                            onChange={(e) => setTagsInput(e.target.value)}
+                          />
+                        </div>
+
+                        {/* Achievements */}
+                        <div className="form-group" style={{ marginTop: '10px' }}>
+                          <label>Thành tựu chính</label>
+                          {achievements.map((ach, idx) => (
+                            <div key={idx} className="achievement-input-row">
+                              <input
+                                type="text"
+                                placeholder={`Thành tựu ${idx + 1}`}
+                                value={ach}
+                                onChange={(e) => handleAchievementChange(idx, e.target.value)}
+                              />
                               <button
                                 type="button"
                                 className="remove-ach-btn"
-                                onClick={() => handleRemoveRelated(idx)}
-                                style={{ width: '28px', height: '28px', padding: 0 }}
+                                onClick={() => handleRemoveAchievement(idx)}
                               >
-                                <X size={14} />
+                                <X size={16} />
                               </button>
                             </div>
-                            
-                            <div className="form-group" style={{ gap: '4px' }}>
-                              <label style={{ fontSize: '11px', color: '#bbb' }}>Tiêu đề</label>
-                              <input
-                                type="text"
-                                placeholder="Ví dụ: Chiến thắng Bạch Đằng 1288..."
-                                value={rel.title}
-                                onChange={(e) => handleRelatedChange(idx, 'title', e.target.value)}
-                              />
-                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="add-ach-btn"
+                            onClick={handleAddAchievement}
+                          >
+                            <Plus size={14} />
+                            Thêm thành tựu
+                          </button>
+                        </div>
 
-                            <div className="form-group" style={{ gap: '4px' }}>
-                              <label style={{ fontSize: '11px', color: '#bbb' }}>Ảnh bài viết (Image URL)</label>
+                      </div>
+                    )}
+
+                    {/* TAB 2: DETAIL PAGE DYNAMIC CONTENT LAYOUT */}
+                    {activeTab === 'detail-content' && (
+                      <div className="tab-pane animate-fadeIn">
+                        
+                        {/* Full Biography */}
+                        <div className="form-group">
+                          <label htmlFor="fig-bio">Tiểu sử đầy đủ</label>
+                          <textarea
+                            id="fig-bio"
+                            rows="5"
+                            placeholder="Nhập nội dung đầy đủ của phần giới thiệu tiểu sử vĩ nhân..."
+                            value={fullBio}
+                            onChange={(e) => setFullBio(e.target.value)}
+                          ></textarea>
+                        </div>
+
+                        {/* Interesting Facts (Sự thật thú vị) */}
+                        <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '15px' }}>
+                          <label>Sự thật thú vị (Trivia Facts)</label>
+                          {facts.map((fact, idx) => (
+                            <div key={idx} className="achievement-input-row">
+                              <textarea
+                                rows="2"
+                                placeholder={`Sự thật thú vị thứ ${idx + 1}...`}
+                                value={fact}
+                                onChange={(e) => handleFactChange(idx, e.target.value)}
+                              ></textarea>
+                              <button
+                                type="button"
+                                className="remove-ach-btn"
+                                onClick={() => handleRemoveFact(idx)}
+                                style={{ height: 'auto' }}
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="add-ach-btn"
+                            onClick={handleAddFact}
+                          >
+                            <Plus size={14} />
+                            Thêm sự thật thú vị
+                          </button>
+                        </div>
+
+                        {/* Gallery Images URLs */}
+                        <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '15px' }}>
+                          <label>Hình ảnh phụ (Gallery Images - 2 ảnh chồng lên nhau)</label>
+                          <div className="form-row">
+                            <div className="form-group col-6">
+                              <label htmlFor="gallery-1" style={{ fontSize: '11px', color: '#aaa' }}>Đường dẫn ảnh phụ 1</label>
                               <input
                                 type="url"
-                                placeholder="Link ảnh minh họa..."
-                                value={rel.image}
-                                onChange={(e) => handleRelatedChange(idx, 'image', e.target.value)}
+                                id="gallery-1"
+                                placeholder="https://..."
+                                value={galleryImages[0]}
+                                onChange={(e) => handleGalleryChange(0, e.target.value)}
                               />
                             </div>
-
-                            <div className="form-group" style={{ gap: '4px' }}>
-                              <label style={{ fontSize: '11px', color: '#bbb' }}>Nội dung bài viết</label>
-                              <textarea
-                                rows="3"
-                                placeholder="Nội dung câu chuyện/giai thoại liên quan..."
-                                value={rel.content}
-                                onChange={(e) => handleRelatedChange(idx, 'content', e.target.value)}
-                              ></textarea>
+                            <div className="form-group col-6">
+                              <label htmlFor="gallery-2" style={{ fontSize: '11px', color: '#aaa' }}>Đường dẫn ảnh phụ 2</label>
+                              <input
+                                type="url"
+                                id="gallery-2"
+                                placeholder="https://..."
+                                value={galleryImages[1]}
+                                onChange={(e) => handleGalleryChange(1, e.target.value)}
+                              />
                             </div>
                           </div>
-                        ))}
-                        <button
-                          type="button"
-                          className="add-ach-btn"
-                          onClick={handleAddRelated}
-                        >
-                          <Plus size={14} />
-                          Thêm bài viết liên quan
+                        </div>
+
+                        {/* Related articles (Bài viết liên quan / Giai thoại) */}
+                        <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '15px' }}>
+                          <label>Bài viết liên quan / Giai thoại (Related Articles)</label>
+                          {related.map((rel, idx) => (
+                            <div key={idx} className="related-input-group">
+                              <div className="related-input-header">
+                                <span style={{ fontSize: '12px', fontWeight: '700', color: '#d4af37' }}>Bài viết #{idx + 1}</span>
+                                <button
+                                  type="button"
+                                  className="remove-ach-btn"
+                                  onClick={() => handleRemoveRelated(idx)}
+                                  style={{ width: '28px', height: '28px', padding: 0 }}
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                              
+                              <div className="form-group" style={{ gap: '4px' }}>
+                                <label style={{ fontSize: '11px', color: '#bbb' }}>Tiêu đề</label>
+                                <input
+                                  type="text"
+                                  placeholder="Ví dụ: Chiến thắng Bạch Đằng 1288..."
+                                  value={rel.title}
+                                  onChange={(e) => handleRelatedChange(idx, 'title', e.target.value)}
+                                />
+                              </div>
+
+                              <div className="form-group" style={{ gap: '4px' }}>
+                                <label style={{ fontSize: '11px', color: '#bbb' }}>Ảnh bài viết (Image URL)</label>
+                                <input
+                                  type="url"
+                                  placeholder="Link ảnh minh họa..."
+                                  value={rel.image}
+                                  onChange={(e) => handleRelatedChange(idx, 'image', e.target.value)}
+                                />
+                              </div>
+
+                              <div className="form-group" style={{ gap: '4px' }}>
+                                <label style={{ fontSize: '11px', color: '#bbb' }}>Nội dung bài viết</label>
+                                <textarea
+                                  rows="3"
+                                  placeholder="Nội dung câu chuyện/giai thoại liên quan..."
+                                  value={rel.content}
+                                  onChange={(e) => handleRelatedChange(idx, 'content', e.target.value)}
+                                ></textarea>
+                              </div>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="add-ach-btn"
+                            onClick={handleAddRelated}
+                          >
+                            <Plus size={14} />
+                            Thêm bài viết liên quan
+                          </button>
+                        </div>
+
+                      </div>
+                    )}
+
+                    {/* Submit buttons available at both tabs */}
+                    {editingId ? (
+                      <div className="import-form-actions">
+                        <button type="submit" disabled={isLoading} className="import-submit-btn">
+                          <Save size={18} />
+                          <span>{isLoading ? 'Đang cập nhật...' : 'Cập nhật vĩ nhân'}</span>
+                        </button>
+                        <button type="button" onClick={handleCancelEdit} className="import-cancel-btn">
+                          Hủy sửa
                         </button>
                       </div>
+                    ) : (
+                      <button type="submit" disabled={isLoading} className="import-submit-btn" id="import-submit-btn">
+                        <Save size={18} />
+                        <span>{isLoading ? 'Đang lưu vĩ nhân...' : 'Thêm vĩ nhân vào hệ thống'}</span>
+                      </button>
+                    )}
 
+                  </form>
+                ) : (
+                  /* TAB 3: MANAGEMENT PANEL */
+                  <div className="manager-pane animate-fadeIn">
+                    <div className="manager-search-wrapper">
+                      <input
+                        type="text"
+                        placeholder="Tìm kiếm danh nhân để sửa hoặc xóa..."
+                        value={adminSearch}
+                        onChange={(e) => setAdminSearch(e.target.value)}
+                        className="manager-search-input"
+                      />
                     </div>
-                  )}
-
-                  {/* Submit buttons available at both tabs */}
-                  <button type="submit" disabled={isLoading} className="import-submit-btn" id="import-submit-btn">
-                    <Save size={18} />
-                    <span>{isLoading ? 'Đang lưu vĩ nhân...' : 'Thêm vĩ nhân vào hệ thống'}</span>
-                  </button>
-
-                </form>
+                    <div className="manager-list">
+                      {adminLoading ? (
+                        <div className="manager-list-empty">Đang tải danh sách...</div>
+                      ) : filteredAdminFigures.length === 0 ? (
+                        <div className="manager-list-empty">Không tìm thấy vĩ nhân nào.</div>
+                      ) : (
+                        filteredAdminFigures.map(fig => (
+                          <div key={fig.id} className="manager-item">
+                            <div className="manager-item__left">
+                              <div className="manager-item__avatar">
+                                {fig.avatar_image ? (
+                                  <img src={fig.avatar_image} alt={fig.name} />
+                                ) : (
+                                  <div className="manager-item__avatar-placeholder">
+                                    {fig.name.charAt(0)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="manager-item__details">
+                                <h4 className="manager-item__name">{fig.name}</h4>
+                                <p className="manager-item__meta">
+                                  {fig.period_name || 'Không rõ thời kỳ'} • {fig.fields?.map(f => f.name).join(', ') || 'Chưa phân loại'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="manager-item__actions">
+                              <button
+                                type="button"
+                                className="manager-btn manager-btn--edit"
+                                onClick={() => handleEditClick(fig.id)}
+                              >
+                                Sửa
+                              </button>
+                              <button
+                                type="button"
+                                className="manager-btn manager-btn--delete"
+                                onClick={() => handleDeleteClick(fig.id)}
+                              >
+                                Xóa
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

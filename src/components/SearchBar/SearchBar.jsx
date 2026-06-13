@@ -23,7 +23,7 @@ export default function SearchBar() {
   useEffect(() => {
     const fetchFigures = async () => {
       try {
-        const res = await fetch('/api/celebrities');
+        const res = await fetch(`/api/celebrities?t=${Date.now()}`);
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) setAllFigures(data);

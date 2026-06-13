@@ -16,7 +16,7 @@ export default function FeaturedSlider() {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-        const res = await fetch('/api/celebrities');
+        const res = await fetch(`/api/celebrities?t=${Date.now()}`);
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
         // Lấy tối đa 5 danh nhân đầu tiên làm featured

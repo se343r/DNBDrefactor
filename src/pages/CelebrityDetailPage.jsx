@@ -73,7 +73,7 @@ export default function CelebrityDetailPage() {
     const fetchCelebrity = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/celebrities/${id}`);
+        const response = await fetch(`${API_BASE_URL}/celebrities/${id}?t=${Date.now()}`);
         if (!response.ok) throw new Error('Không tìm thấy');
         const data = await response.json();
         setCelebrity(data);

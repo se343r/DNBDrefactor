@@ -96,7 +96,7 @@ export default function CategoryPage() {
       try {
         setLoading(true);
         setErrorMsg('');
-        const response = await fetch(`${API_BASE_URL}/celebrities`);
+        const response = await fetch(`${API_BASE_URL}/celebrities?t=${Date.now()}`);
         if (!response.ok) throw new Error('API server error');
         const data = await response.json();
         

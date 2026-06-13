@@ -819,3 +819,206 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(95, 49, 236, 0.35);
 }
+
+/* ==========================================================================
+   ADMIN PORTAL - MANAGEMENT PANEL LIST
+   ========================================================================== */
+
+.manager-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.manager-search-wrapper {
+  margin-bottom: 8px;
+}
+
+.manager-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #130d22;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 13.5px;
+  transition: all 0.2s ease;
+}
+
+.manager-search-input:focus {
+  outline: none;
+  border-color: #5f31ec;
+  box-shadow: 0 0 10px rgba(95, 49, 236, 0.3);
+}
+
+.manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.manager-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.manager-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.manager-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.2s ease;
+}
+
+.manager-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(95, 49, 236, 0.2);
+}
+
+.manager-item__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0; /* allows text truncation */
+}
+
+.manager-item__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #221a36;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.manager-item__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.manager-item__avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #5f31ec 0%, #d56bff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.manager-item__details {
+  min-width: 0;
+}
+
+.manager-item__name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manager-item__meta {
+  font-size: 11px;
+  color: #a1a1aa;
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manager-item__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.manager-btn {
+  background: transparent;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.manager-btn--edit {
+  border: 1px solid rgba(95, 49, 236, 0.3);
+  color: #b9a3ff;
+}
+
+.manager-btn--edit:hover {
+  background: #5f31ec;
+  color: #fff;
+  border-color: #5f31ec;
+}
+
+.manager-btn--delete {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.manager-btn--delete:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
+}
+
+.manager-list-empty {
+  text-align: center;
+  padding: 30px;
+  color: #a1a1aa;
+  font-size: 13.5px;
+}
+
+/* Edit Form buttons container */
+.import-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.import-form-actions .import-submit-btn {
+  flex: 1;
+  margin-top: 0;
+}
+
+.import-cancel-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  border-radius: 8px;
+  padding: 13px 20px;
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.import-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+

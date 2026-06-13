@@ -52,7 +52,7 @@ router.get('/', async (req, res) => {
     res.json(formatted);
   } catch (error) {
     console.error('Lỗi lấy danh sách danh nhân:', error.message);
-    res.status(500).json({ error: 'Không thể lấy danh sách danh nhân' });
+    res.status(500).json({ error: 'Không thể lấy danh sách danh nhân: ' + error.message });
   }
 });
 
@@ -122,7 +122,7 @@ router.get('/:id', async (req, res) => {
     res.json(formattedCeleb);
   } catch (error) {
     console.error('Lỗi lấy chi tiết danh nhân:', error.message);
-    res.status(500).json({ error: 'Không thể lấy thông tin danh nhân' });
+    res.status(500).json({ error: 'Không thể lấy thông tin danh nhân: ' + error.message });
   }
 });
 
@@ -165,7 +165,7 @@ router.get('/field/:fieldId', async (req, res) => {
     res.json(formatted);
   } catch (error) {
     console.error('Lỗi lấy danh nhân theo lĩnh vực:', error.message);
-    res.status(500).json({ error: 'Không thể lấy danh nhân theo lĩnh vực' });
+    res.status(500).json({ error: 'Không thể lấy danh nhân theo lĩnh vực: ' + error.message });
   }
 });
 
@@ -231,7 +231,7 @@ router.post('/', requireImportKey, async (req, res) => {
     });
   } catch (error) {
     console.error('Lỗi thêm danh nhân:', error.message);
-    res.status(500).json({ error: 'Không thể thêm danh nhân' });
+    res.status(500).json({ error: 'Không thể thêm danh nhân: ' + error.message });
   }
 });
 

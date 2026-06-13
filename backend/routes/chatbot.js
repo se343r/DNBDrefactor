@@ -31,7 +31,7 @@ router.post('/', async (req, res) => {
     }));
 
     const body = {
-      system_instruction: {
+      systemInstruction: {
         parts: [{ text: SYSTEM_PROMPT }]
       },
       contents: [
@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
 
     if (!response.ok) {
       console.error('Gemini API error:', data);
-      return res.status(502).json({ error: 'Lỗi từ Gemini API', detail: data.error?.message });
+      return res.status(502).json({ error: 'Lỗi từ Gemini API: ' + (data.error?.message || 'Lỗi không xác định') });
     }
 
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;

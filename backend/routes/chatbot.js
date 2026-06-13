@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
 const SYSTEM_PROMPT = `Bạn là Trợ lý Lịch Sử AI của "Cổng Khám Phá Danh Nhân Việt Nam".
 Nhiệm vụ của bạn là hỗ trợ người dùng tìm hiểu thông tin về các danh nhân lịch sử Việt Nam, các thời kỳ lịch sử, và tính năng của trang web.

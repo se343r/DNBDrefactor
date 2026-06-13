@@ -172,3 +172,60 @@
     padding: 0 var(--space-md);
   }
 }
+
+/* User menu in Header */
+.header__user-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.header__user-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.header__logout-btn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header__logout-btn:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
+}
+
+.header__login-btn {
+  background: rgba(95, 49, 236, 0.1);
+  border: 1px solid rgba(95, 49, 236, 0.3);
+  color: #b9a3ff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.header__login-btn:hover {
+  background: #5f31ec;
+  color: #fff;
+  border-color: #5f31ec;
+  box-shadow: 0 0 10px rgba(95, 49, 236, 0.4);
+}
+
+@media (max-width: 600px) {
+  .header__user-name {
+    display: none; /* Hide name on small screens */
+  }
+}

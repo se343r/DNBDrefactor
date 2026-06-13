@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import './Header.css';
 
@@ -7,6 +7,34 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const checkUser = () => {
+      const stored = localStorage.getItem('dnbd_user');
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    };
+    checkUser();
+
+    window.addEventListener('storage', checkUser);
+    return () => window.removeEventListener('storage', checkUser);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('dnbd_user');
+    setUser(null);
+    window.dispatchEvent(new Event('storage'));
+    navigate('/');
+  };
 
   const navItems = [
     { label: 'Trang chủ', to: '/' },
@@ -36,6 +64,19 @@ export default function Header() {
         </nav>
 
         <div className="header__actions">
+          {user ? (
+            <div className="header__user-menu">
+              <span className="header__user-name">Chào, {user.username}</span>
+              <button onClick={handleLogout} className="header__logout-btn" id="logout-btn">
+                Đăng xuất
+              </button>
+            </div>
+          ) : (
+            <Link to="/auth" className="header__login-btn" id="login-btn">
+              Đăng nhập
+            </Link>
+          )}
+
           <button
             className={`header__hamburger ${mobileMenuOpen ? 'header__hamburger--open' : ''}`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

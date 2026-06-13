@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Sparkles, Layout, Eye, CheckCircle, AlertCircle, Plus,
 import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
 import './ImportContentPage.css';
+import './CategoryPage.css';
 
 const API_CELEBRITIES_URL = '/api/celebrities';
 
@@ -887,7 +888,7 @@ export default function ImportContentPage() {
                   {previewMode === 'card' ? (
                     /* 1. Preview Card Mode */
                     <div className="preview-card-container">
-                      <div className="figure-card" style={{ width: '100%', animation: 'none' }}>
+                      <div className="figure-card" style={{ width: '100%', opacity: 1, transform: 'none' }}>
                         <div className="figure-card__img-container">
                           <img src={previewImg} alt={previewFigureName} className="figure-card__img" />
                           <div className="figure-card__img-overlay"></div>
